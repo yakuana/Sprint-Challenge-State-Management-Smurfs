@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Form, Field, withFormik } from 'formik';
+import { connect } from 'react-redux';
 import * as Yup from 'yup';
 
-const SmurfForm = ({ errors, touched, values, handleSubmit, status }) => {
+import { postSmurfData } from "../actions/index.js";
+
+const SmurfForm = ({ errors, touched, values, handleSubmit, status, props}) => {
 
     // hook for keeping track of users 
     const [smurf, setSmurf] = useState({});
@@ -85,27 +88,24 @@ const FormikSmurfForm = withFormik({
     }),
     
     // update values and set status 
-    handleSubmit(values, { setStatus, resetForm }) {
-        axios
-            // smurf post api 
-            .post('http://localhost:3333/smurfs', values)
+    handleSubmit(values, { resetForm, props, setStatus }) {
 
-            .then(response => {
-                // successful 
-                console.log("post api response object", response);
-                console.log("current smurf", values);
-                resetForm(); 
-                
-            })
+        props.postSmurfData(values);
 
-            .catch(error => {
-                // unsuccessful 
-                console.log("The api is currently down.", error.response);
-                resetForm();
-            });
+        console.log("values, props", values, props)
+        resetForm(); 
     }
 
 })(SmurfForm); // currying functions
   
-export default FormikSmurfForm;
-  
+const mapStateToProps = state => {
+    return {
+        isLoadingPost: state.isLoadingPost,
+        post: state.post
+        };
+    };
+    
+    export default connect(
+        mapStateToProps,
+        { postSmurfData }
+)(FormikSmurfForm);
