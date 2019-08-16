@@ -1,72 +1,111 @@
-import React from 'react';
-import { connect } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Form, Field, withFormik } from 'formik';
+import * as Yup from 'yup';
 
+const SmurfForm = ({ errors, touched, values, handleSubmit, status }) => {
 
-class SmurfForm extends React.Component {
+    // hook for keeping track of users 
+    const [smurf, setSmurf] = useState({});
+    
+    // updates users if change has occured 
+    useEffect(() => {
+        if (status) {
+            // change has occured, so update users array 
+            setSmurf(newSmurf => ({...smurf, newSmurf}))
+        }
+    }, [status]);
+    
+    return (
+      <div className="form-container">
+       
+        <h1>Sign Up</h1>
 
-    handleChanges = event => {
-        // updates state using event changes 
+        <Form className="form">
+            
+            {/* name */}
+            <Field 
+                type="text" 
+                name="name" 
+                placeholder="Name"
+                className="field" 
+            />
+            {touched.name && errors.name && ( <p className="error">{errors.name}</p> )}
 
-        this.setState({
-            [event.target.name]: event.target.value
-        });
-    };
+            {/* age */}
+            <Field 
+                type="text" 
+                name="age" 
+                placeholder="Age"
+                className="field" 
+            />
+            {touched.name && errors.name && ( <p className="error">{errors.name}</p> )}
 
-    submitItem = event => {
-        // allows tasks to be added 
-        event.preventDefault();
+            {/* height */}
+            <Field 
+                type="text" 
+                name="height" 
+                placeholder="Height" 
+                className="field" 
+            />
+            {touched.name && errors.name && <p className="error">{errors.name}</p>}
 
-        this.post.id = Date.now();
+            <button type="submit" className="button">Submit</button>
+        </Form>
 
-        this.postSmurfData(this.post);
-    };
-
-    render() {
-        return (
-            <div className="todo-form-container">
-                <form onSubmit={this.submitItem} className="todo-form">
-                    <input
-                        type="text"
-                        value={this.post.name}
-                        name="item"
-                        onChange={this.handleChanges}
-                        className="input"
-                        placeholder="Enter Smurf Name"
-                    />
-
-                    <input
-                        type="text"
-                        value={this.post.age}
-                        name="item"
-                        onChange={this.handleChanges}
-                        className="input"
-                        placeholder="Enter Smurf Age"
-                    />
-
-                    <input
-                        type="text"
-                        value={this.post.height}
-                        name="item"
-                        onChange={this.handleChanges}
-                        className="input"
-                        placeholder="Enter Smurf Height (without units)"
-                    />  
-
-                    <button id="add">Add</button>
-                </form>
-            </div>
-        );
-    }
-}
-
-const mapStateToProps = state => {
-    return {
-        isLoadingPost: state.isLoadingSmurf,
-        post: state.post
-    };
+      </div>
+    );
 };
+
+// using formik 
+const FormikSmurfForm = withFormik({
+    
+    // making sure each prop has a default value if given value is undefined 
+    mapPropsToValues({ name, age, height, id }) {
+      return {
+        name: name || "",
+        age: age || "",
+        height: height || "",
+        id: Date.now()
+      };
+    },
+    
+    // use yup to enforce input requirements 
+    validationSchema: Yup.object().shape({
+        name: Yup
+        .string()
+        .required("Please Enter Smurf Name"),
+        age: Yup
+        .string()
+        .min(1)
+        .required("Age must be atleast 1 digit"),
+        height: Yup
+        .string()
+        .required("Please Enter Smurf Height Without Units"),
+    }),
+    
+    // update values and set status 
+    handleSubmit(values, { setStatus, resetForm }) {
+        axios
+            // smurf post api 
+            .post('http://localhost:3333/smurfs', values)
+
+            .then(response => {
+                // successful 
+                console.log("post api response object", response);
+                console.log("current smurf", values);
+                resetForm(); 
+                
+            })
+
+            .catch(error => {
+                // unsuccessful 
+                console.log("The api is currently down.", error.response);
+                resetForm();
+            });
+    }
+
+})(SmurfForm); // currying functions
   
-export default connect(
-    mapStateToProps,
-    { postSmurfData }
-)(SmurfForm);
+export default FormikSmurfForm;
+  
